@@ -1,0 +1,1392 @@
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>عرض أسعار - مؤسسة أحدث الشبكات</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f5f5; padding: 10px; }
+  
+  .client-display { 
+      display: none !important; 
+  }
+
+  /* الأنماط الخاصة بالطباعة (الوضع المطلوب) */
+  @media print {
+    body { background: white; padding: 0; }
+    .no-print { display: none !important; } /* 🛠️ هذا الكلاس يضمن الإخفاء */
+    .container { box-shadow: none; width: 100%; margin: 0; }
+    
+    .client-display { 
+        display: flex !important; 
+        flex-wrap: wrap;
+        gap: 15px !important;
+        margin-bottom: 15px !important;
+        padding: 10px; 
+        border: 1px solid #ddd; 
+        background: #f9f9f9;
+        font-size: 15px; 
+    } 
+    
+    .client-display p:empty { 
+        display: none !important; 
+    }
+    
+    .header-label { display: none !important; } 
+    .client-info-container { flex-direction: column !important; gap: 0 !important; }
+
+    #quoteContainer table { border-collapse: collapse; }
+    #quoteContainer table thead tr { border-bottom: 2px solid #2d4663; }
+    #quoteContainer table th { padding: 8px 5px; border: none; }
+    #table td { padding: 8px 5px; border-top: 1px solid #eee; border-bottom: 1px solid #eee; border-left: none; border-right: none; font-size: 13px; }
+
+    #notesContent { 
+      white-space: pre-wrap; 
+      line-height: 1.8 !important; 
+      padding-right: 15px; 
+    }
+    
+  }
+  
+  @page { size: A4; margin: 15mm; }
+  .container { max-width: 1200px; margin: 0 auto; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
+  
+  /* أزرار التحكم */
+  .controls { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .btn { padding: 12px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; color: white; }
+  .btn:hover { opacity: 0.9; }
+  .btn-print { background: #2d4663; }
+  .btn-pdf { background: #3b82f6; }
+  .btn-add { background: #10b981; }
+  .btn-import { background: #f59e0b; }
+  .btn-danger { background: #ef4444; }
+  .btn-manual-add { background: #9453a6; }
+
+  /* 🛠️ تحسين عرض الأزرار على الجوال */
+  .controls .btn {
+    flex: 1 1 45%; /* يسمح لزرين بالظهور في صف واحد */
+    min-width: 120px; 
+  }
+  /* 🛠️ لجعل الأزرار عمودية تماماً على شاشات الجوال الصغيرة جداً */
+  @media screen and (max-width: 500px) {
+    .controls {
+      flex-direction: column; 
+    }
+    .controls .btn {
+      flex: 1 1 100%; 
+      margin-bottom: 5px; 
+    }
+  }
+
+  /* رأس المستند */
+  .header { background: linear-gradient(135deg, #2d4663, #1e2f45); color: white; padding: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px; }
+  .header-details { display: flex; flex-direction: column; flex: 1; gap: 5px; }
+  .header h1 { font-size: 24px; margin-bottom: 8px; }
+  .logo-box { width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background: #f9fafb; border-radius: 6px; overflow: hidden; }
+  .client-input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+  .total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+
+  /* 🛠️ تعديل #2: فصل جملة الشكر بمسافة سفلية في الـ Footer */
+  .footer { 
+    background:#2d4663; 
+    color:#fff; 
+    padding:15px; 
+    text-align:center;
+  }
+  .footer p:first-child { 
+    margin-bottom: 5px; /* يضيف مسافة 5 بكسل بعد جملة "شكراً لثقتكم بنا" */
+    line-height: 1.5; /* يضمن مسافة سطر إضافية */
+  }
+
+
+  /* تنسيق المودالات (إدارة الأصناف والعملاء) */
+  #productsManagerBox, #clientsManagerBox {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background:white; 
+    color: #333; 
+    padding:20px; border-radius:8px; box-shadow:0 0 15px rgba(0,0,0,0.4); z-index:2000; 
+    width: 90%; 
+    max-width: 1000px; 
+    height: auto;
+    max-height: 95vh; 
+    overflow-y: auto; 
+    display: none;
+  }
+  #productsManagerBox table, #clientsManagerBox table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 14px;
+  }
+  #productsManagerBox th, #productsManagerBox td, #clientsManagerBox th, #clientsManagerBox td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: right;
+  }
+  #productsManagerBox td[contenteditable="true"], #clientsManagerBox td[contenteditable="true"] {
+      background: #fcfcfc; 
+      cursor: text;
+  }
+  #productsManagerBox tbody tr:hover, #clientsManagerBox tbody tr:hover {
+      background: #f5f5f5;
+  }
+  #productsManagerBox #productSearch, #clientsManagerBox #clientSearch {
+    width: 100%; 
+    padding: 10px; 
+    border: 1px solid #ccc; 
+    border-radius: 4px; 
+    margin-bottom: 10px;
+  }
+  
+  
+  textarea { 
+    width: 100%; 
+    min-height: 150px; 
+    padding: 10px; 
+    border: 1px solid #ccc; 
+    border-radius: 4px; 
+    color: #333; 
+  }
+  
+  /* تنسيق اقتراحات العملاء */
+  .autocomplete-list {
+    position: absolute;
+    z-index: 100;
+    max-height: 150px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #ccc;
+    width: 100%; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    top: 100%; 
+  }
+  .autocomplete-item {
+    padding: 8px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+  }
+  .autocomplete-item:hover {
+    background-color: #f0f0f0;
+  }
+  
+  /* مودالات المنتصف */
+  #addItemBox, #companyInfoForm, #manualItemBox, #importModalBox { 
+    display: none; 
+    position: fixed; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%);
+    background:white; 
+    color: #333; 
+    padding:20px; 
+    border-radius:8px; 
+    box-shadow:0 0 15px rgba(0,0,0,0.4); 
+    z-index:2000; 
+    width: 90%; 
+    max-width: 350px; 
+    max-height: 95vh; 
+    overflow-y: auto; 
+  }
+
+  #addItemBox input, #companyInfoForm input, #manualItemBox input, #manualItemBox textarea, #importModalBox textarea { 
+    width: 100%; padding:8px; margin-top:5px; margin-bottom: 10px; border-radius:4px; border:1px solid #ccc; 
+    color: #333; 
+  }
+  
+  /* تنسيق الاسم الإضافي */
+  .company-sub-title { 
+      font-size: 16px; 
+      color: #f9fafb; 
+      margin-top: -5px; 
+      margin-bottom: 10px;
+  }
+  
+  /* 🛠️ تنسيق لإظهار نسبة الخصم في الطباعة فقط */
+  .print-only { display: none; }
+  @media print {
+      .print-only { display: inline !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="controls no-print">
+  <button class="btn btn-print" onclick="printQuote()">🖨️ طباعة</button>
+  <button class="btn btn-pdf" onclick="savePDF()">📑 حفظ PDF</button>
+  <button class="btn" style="background:#0a84ff;" onclick="showProductsManager()">📦 إدارة الأصناف</button>
+  <button class="btn" style="background:#00bcd4;" onclick="showClientsManager()">👤 إدارة العملاء</button> <button class="btn" style="background:#555; margin-left:10px;" onclick="showCompanyInfoForm()">⚙️ إعدادات الشركة</button>
+</div>
+
+<div id="clientsManagerBox">
+    <h3>👤 إدارة العملاء المحفوظين</h3>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px; justify-content: space-between;">
+        <input type="text" id="clientSearch" placeholder="ابحث عن اسم أو رقم العميل..." oninput="filterClientsTable()" style="flex:1; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" />
+        <button class="btn btn-import" onclick="exportClientsToExcel()">📊 استخراج إلى Excel</button>
+    </div>
+
+    <div style="max-height: 450px; overflow-y: auto;">
+        <table id="clientsTable">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">م</th>
+                    <th style="width: 30%;">اسم العميل</th>
+                    <th style="width: 40%;">العنوان</th>
+                    <th style="width: 15%;">رقم الجوال</th>
+                    <th style="width: 10%;">تحكم</th>
+                </tr>
+            </thead>
+            <tbody id="clientsTableBody">
+            </tbody>
+        </table>
+    </div>
+    <div style="margin-top:20px; text-align: center;">
+        <button class="btn btn-danger" onclick="hideClientsManager()">❌ إغلاق</button>
+    </div>
+</div>
+<div id="importModalBox" style="max-width: 500px;">
+  <div class="modal-content" style="max-width: 500px;">
+    <h3>📊 استيراد من Excel</h3>
+    <p>انسخ الأعمدة الثلاثة (اسم المنتج، وصف المنتج، سعر التكلفة) والصق هنا:</p>
+    <textarea id="excelData" placeholder="اسم المنتج \t وصف المنتج \t سعر التكلفة"></textarea>
+    <div style="margin-top:10px; display:flex; gap:10px;">
+      <button class="btn btn-add" style="flex:1;" onclick="importData()">✅ استيراد وحفظ</button>
+      <button class="btn btn-danger" onclick="hideImportModal()">❌ إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div id="addItemBox">
+  <h3>إضافة بند (من الأصناف المحفوظة)</h3>
+  <label>ابحث عن الصنف:</label>
+  <input type="text" id="searchItem" placeholder="ابحث عن الصنف..." oninput="filterProducts()" />
+  <div id="suggestions" style="max-height:150px; overflow:auto; border:1px solid #ccc; padding:5px; margin-top:5px; margin-bottom:10px;"></div>
+  <label>الكمية:</label>
+  <input type="number" id="itemQty" value="1" min="1" />
+  <div style="margin-top:10px; display:flex; gap:10px;">
+    <button class="btn btn-add" onclick="addSelectedItem()">إضافة</button>
+    <button class="btn btn-danger" onclick="hideAddItem()">إلغاء</button>
+  </div>
+</div>
+
+<div id="manualItemBox">
+  <h3>➕ إضافة صنف جديد يدوياً</h3>
+  <label>اسم الصنف:</label>
+  <input type="text" id="manualName" placeholder="مثال: تركيب كاميرا Hikvision" />
+  <label>وصف الصنف:</label>
+  <textarea id="manualDesc" placeholder="مثال: توريد وتركيب كاميرا شبكية بدقة 4 ميجا"></textarea>
+  <label>سعر التكلفة (ر.س):</label>
+  <input type="number" id="manualCost" placeholder="100.00" min="0" step="0.01" />
+  <label>الكمية:</label>
+  <input type="number" id="manualQty" value="1" min="1" />
+  <div style="margin-top:10px; display:flex; gap:10px;">
+    <button class="btn btn-manual-add" onclick="addNewItemManually()">✅ إضافة وحفظ</button>
+    <button class="btn btn-danger" onclick="hideManualAddItem()">❌ إلغاء</button>
+  </div>
+</div>
+
+<div id="productsManagerBox">
+    <h3>📦 إدارة الأصناف المحفوظة</h3>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 15px; justify-content: flex-end;">
+        <button class="btn btn-import" onclick="showImportModal()">📊 استيراد من Excel</button>
+        <button class="btn btn-danger" onclick="deleteAllProducts()">🗑️ حذف كل الأصناف</button>
+    </div>
+
+    <input type="text" id="productSearch" placeholder="ابحث عن اسم أو وصف الصنف..." oninput="filterProductsTable()" />
+
+    <div style="max-height: 400px; overflow-y: auto;">
+        <table id="productsTable">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">م</th>
+                    <th style="width: 30%;">اسم الصنف</th>
+                    <th style="width: 40%;">وصف الصنف</th>
+                    <th style="width: 15%;">سعر التكلفة (ر.س)</th>
+                    <th style="width: 10%;">تحكم</th>
+                </tr>
+            </thead>
+            <tbody id="productsTableBody">
+                </tbody>
+        </table>
+    </div>
+    <div style="margin-top:20px; text-align: center;">
+        <button class="btn btn-danger" onclick="hideProductsManager()">❌ إغلاق</button>
+    </div>
+</div>
+
+<div id="companyInfoForm">
+  <h3>تعديل بيانات الشركة</h3>
+  
+  <input type="file" id="logoFile" accept="image/*" style="display:none" onchange="saveLogo(event)"/> 
+  
+  <label style="display:block; margin-top:10px; font-weight:bold;">🖼️ شعار الشركة (Logo):</label>
+  <div id="logoPreviewContainer" style="text-align:center; margin-bottom:10px; border:1px solid #eee; padding:10px; border-radius:4px;">
+    </div>
+  
+  <button type="button" class="btn btn-add" style="width:100%; margin-bottom: 15px;" onclick="triggerLogoFileInput()">🖼️ رفع/تغيير الشعار</button>
+  
+  <label>اسم الشركة:</label>
+  <input type="text" id="companyName" placeholder="اسم الشركة" />
+  <label>الاسم الإضافي (السطر الثاني):</label>
+  <input type="text" id="companySubTitle" placeholder="كيان سعودي رائد ومتخصص في تنفيذ حلول التيار الخفيف والأنظمة التقنية المتكاملة" /> 
+  <label>العنوان:</label>
+  <input type="text" id="companyAddress" placeholder="العنوان" />
+  <label>الجوال:</label>
+  <input type="text" id="companyPhone" placeholder="📞 رقم الجوال" />
+  <label>البريد الإلكتروني:</label>
+  <input type="text" id="companyEmail" placeholder="البريد الإلكتروني" />
+  <div style="margin-top:10px; display:flex; gap:10px;">
+    <button class="btn btn-add" style="flex:1;" onclick="saveCompanyInfo()">✅ حفظ التعديلات</button>
+    <button class="btn btn-danger" onclick="hideCompanyInfoForm()">❌ إلغاء</button>
+  </div>
+</div>
+
+<div class="container" id="quoteContainer" style="width: 98%;">
+  <div class="header">
+    <div class="header-details">
+      <h1><span id="headerCompanyName">مؤسسة أحدث الشبكات للمقاولات العامة</span></h1>
+      <p class="company-sub-title" id="headerCompanySubTitle">كيان سعودي رائد ومتخصص في تنفيذ حلول التيار الخفيف والأنظمة التقنية المتكاملة</p> 
+      <div style="margin-top:10px;">
+        <p style="font-size:14px;"><span class="header-label">العنوان&#x200f;: </span> <span id="companyAddressDisplay">المملكة العربية السعودية</span></p>
+        <p style="font-size:14px;"><span class="header-label">الجوال&#x200f;: </span> <span id="companyPhoneDisplay">+966 XX XXX XXXX</span></p>
+        <p style="font-size:14px;"><span class="header-label">البريد&#x200f;: </span> <span id="companyEmailDisplay">info@ahdath.com</span></p>
+      </div>
+    </div>
+    <div class="logo-box" id="logoBox">
+      <div class="logo-placeholder">
+        🏢<br>ضع شعارك هنا
+        <button class="btn btn-add no-print" style="margin-top:5px; font-size:12px; padding:5px 8px;" onclick="triggerLogoFileInput()">رفع شعار</button> 
+      </div>
+    </div>
+  </div>
+
+  <div class="content" style="padding: 15px 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <p style="font-size:16px; font-weight: bold;">
+            عرض أسعار رقم: <span contenteditable="true" id="quoteNumberDisplay">Q-2025-001</span> 
+        </p>
+        <p style="font-size:16px; font-weight: bold;">
+            التاريخ: <span id="date"></span>
+        </p>
+    </div>
+    
+
+    <div style="background:#f7f7f7; padding:10px; border-radius:4px; margin-bottom:15px; border: 1px solid #ddd;" class="client-input-box no-print">
+      <div style="display:flex; flex-wrap:wrap; gap:10px; position:relative;" class="client-info-container">
+        <div style="flex:1; position:relative;">
+          <input type="text" placeholder="اسم العميل" id="clientName" class="client-input" oninput="showClientSuggestions(this); updateClientDisplay();" onblur="hideClientSuggestions(this)">
+          <div id="clientNameSuggestions" class="autocomplete-list"></div>
+        </div>
+        
+        <input type="text" placeholder="العنوان" id="clientAddress" class="client-input" style="flex:1;" oninput="updateClientDisplay();">
+        <input type="text" placeholder="رقم الجوال" id="clientPhone" class="client-input" style="flex:1;" oninput="updateClientDisplay();">
+      </div>
+    </div>
+    
+    <div style="display:flex; flex-wrap:wrap; gap:15px; width:100%; margin-bottom:15px;" class="client-display">
+      <p id="clientNameDisplay" style="flex: 1 1 100%;"></p>
+      <p id="clientAddressDisplay" style="flex: 1 1 auto;"></p>
+      <p id="clientPhoneDisplay" style="flex: 1 1 auto;"></p>
+    </div>
+
+    <table style="width:100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background:#2d4663; color:#fff;">
+          <th style="padding:10px;">م</th>
+          <th style="padding:10px;">الخدمة &#x200F;/&#x200F; المنتج</th> 
+          <th style="padding:10px;">وصف الصنف</th>
+          <th style="padding:10px;">الكمية</th>
+          <th style="padding:10px;" class="no-print cost-column">سعر التكلفة</th>
+          <th style="padding:10px;">السعر</th>
+          <th style="padding:10px;">الإجمالي</th>
+          <th style="padding:10px;" class="no-print delete-column">حذف</th> 
+        </tr>
+      </thead>
+      <tbody id="table"></tbody>
+    </table>
+
+    <div class="no-print" style="margin-top: 15px; text-align: right;">
+      <button class="btn btn-add" onclick="showAddItem()" style="padding: 10px 20px;">➕ إضافة صنف محفوظ</button>
+      <button class="btn btn-manual-add" onclick="showManualAddItem()" style="padding: 10px 20px;">➕ صنف يدوي جديد</button>
+    </div>
+    <div style="margin-top:15px; padding:15px; background:#eff6ff; border-radius:8px; border:2px solid #2d4663;">
+      <div class="total-row" style="display: flex;">
+        <span>المجموع&#x200f;:</span><span id="subtotal">0 ر.س</span>
+      </div>
+      <div class="total-row" id="discountRow" style="margin-bottom:8px;"> 
+        <span>الخصم&#x200f;:</span>
+        <input type="number" id="discount" value="0" min="0" max="100" oninput="saveDiscount(); calc();" style="width:60px; text-align:center;" class="no-print">
+        <span class="no-print" style="margin-left:5px;">%</span>
+        <span id="discountDisplay" style="font-weight:bold; margin-right:auto;" class="print-only">0%</span>
+        <span id="discAmt" style="color:#ef4444; font-weight:bold;">- 0 ر.س</span>
+      </div>
+      <div class="total-row" id="afterDiscRow">
+        <span>المجموع بعد الخصم&#x200f;:</span><span id="afterDisc">0 ر.س</span>
+      </div>
+      <div class="total-row" style="display: flex;">
+        <span>ضريبة القيمة المضافة (15%)&#x200f;:</span><span id="vat">0 ر.س</span>
+      </div>
+      <div class="total-row" style="font-weight:bold; margin-top:8px; border-top:1px solid #ccc; padding-top:8px; display: flex;">
+        <span>الإجمالي النهائي&#x200f;:</span><span id="total">0 ر.س</span>
+      </div>
+    </div>
+
+    <div style="margin-top:20px; padding:15px; background:#fffbeb; border-radius:8px; border-right:5px solid #f59e0b;">
+      <h3> ملاحظات:</h3>
+      <textarea id="notesEditor" oninput="updateNotesDisplay()" style="width:100%; min-height:100px; border:1px solid #ccc; padding:10px; border-radius:4px;" class="no-print">
+* صلاحية العرض: 30 يوماً من تاريخ الإصدار
+* شروط الدفع: 50% مقدم و 50% عند التسليم
+* مدة التسليم: يتم الاتفاق عليها
+* الأسعار شاملة ضريبة القيمة المضافة
+      </textarea>
+      <div id="notesContent" style="white-space: pre-wrap; line-height: 1.6; padding-right: 15px;">
+* صلاحية العرض: 30 يوماً من تاريخ الإصدار
+* شروط الدفع: 50% مقدم و 50% عند التسليم
+* مدة التسليم: يتم الاتفاق عليها
+* الأسعار شاملة ضريبة القيمة المضافة
+      </div>
+    </div>
+  </div>
+
+  <div class="footer" style="background:#2d4663; color:#fff; padding:15px; text-align:center;">
+    <p>شكراً لثقتكم بنا</p>
+    <p><span id="footerEmail">info@ahdath.com</span> | <span id="footerPhone">+966 XX XXX XXXX</span></p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+  // ** الثوابت والمتغيرات **
+  const PROFIT = 35; 
+  const VAT = 15; 
+  let selectedProduct = null;
+  const LAST_QUOTE_KEY = 'lastQuoteNumber'; 
+  const DISCOUNT_KEY = 'currentDiscountPercent'; 
+
+  const DEFAULT_SUB_TITLE = 'كيان سعودي رائد ومتخصص في تنفيذ حلول التيار الخفيف والأنظمة التقنية المتكاملة';
+  
+  let companyData = {
+    name: localStorage.getItem('companyName') || 'مؤسسة أحدث الشبكات للمقاولات العامة',
+    subTitle: localStorage.getItem('companySubTitle') || DEFAULT_SUB_TITLE, 
+    address: localStorage.getItem('companyAddress') || 'المملكة العربية السعودية',
+    phone: localStorage.getItem('companyPhone') || '+966 XX XXX XXXX',
+    email: localStorage.getItem('companyEmail') || 'info@ahdath.com',
+    logo: localStorage.getItem('companyLogo') || null
+  };
+  
+  // ** دالة تشغيل مدخل ملف الشعار **
+  function triggerLogoFileInput() {
+      document.getElementById('logoFile').click();
+  }
+  
+  // 🛠️ دالة جديدة لحفظ قيمة الخصم عند التعديل
+  function saveDiscount() {
+      const discountInput = document.getElementById('discount');
+      const discountPercent = parseFloat(discountInput.value);
+      let discountVal = isNaN(discountPercent) || discountPercent < 0 ? 0 : discountPercent;
+      discountVal = Math.min(discountVal, 100);
+      localStorage.setItem(DISCOUNT_KEY, discountVal);
+  }
+
+  // 🛠️ دالة جديدة لتحميل قيمة الخصم عند تحميل الصفحة
+  function loadDiscount() {
+      const savedDiscount = localStorage.getItem(DISCOUNT_KEY);
+      if (savedDiscount !== null) {
+          document.getElementById('discount').value = savedDiscount;
+      }
+  }
+
+
+  // ** دوال العرض والتحميل **
+  function updateCompanyDisplay() {
+    document.getElementById('companyAddressDisplay').innerText = companyData.address;
+    document.getElementById('companyPhoneDisplay').innerText = companyData.phone;
+    document.getElementById('companyEmailDisplay').innerText = companyData.email;
+    document.getElementById('headerCompanyName').innerText = companyData.name;
+    document.getElementById('headerCompanySubTitle').innerText = companyData.subTitle; 
+    document.getElementById('footerEmail').innerText = companyData.email;
+    document.getElementById('footerPhone').innerText = companyData.phone;
+    
+    // ** تحديث عرض الشعار في الرأس **
+    const logoBox = document.getElementById('logoBox');
+    if (companyData.logo) {
+        logoBox.innerHTML = `<img src="${companyData.logo}" style="max-width:100%; max-height:100%;">`;
+    } else {
+        logoBox.innerHTML = `
+          <div class="logo-placeholder">
+            🏢<br>ضع شعارك هنا
+            <button class="btn btn-add no-print" style="margin-top:5px; font-size:12px; padding:5px 8px;" onclick="triggerLogoFileInput()">رفع شعار</button>
+          </div>
+        `;
+    }
+    
+    // ** تحديث معاينة الشعار في نموذج الإعدادات **
+    const logoPreviewContainer = document.getElementById('logoPreviewContainer');
+    if (logoPreviewContainer) {
+        if (companyData.logo) {
+            // عرض الشعار بحجم صغير ومع اطار في المعاينة
+            logoPreviewContainer.innerHTML = `<img src="${companyData.logo}" style="max-width:100px; max-height:100px; border-radius:4px; border:1px solid #ccc;">`;
+        } else {
+            logoPreviewContainer.innerHTML = `<p style="color:#888;">لا يوجد شعار حالياً</p>`;
+        }
+    }
+  }
+  
+  // ** دالة حفظ الشعار (تعمل عند اختيار الملف من أي مكان) **
+  function saveLogo(e) {
+    const file = e.target.files[0];
+    if(file) {
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        companyData.logo = ev.target.result;
+        localStorage.setItem('companyLogo', companyData.logo);
+        updateCompanyDisplay(); // إعادة تحميل العرض لتحديث الرأس والنموذج
+        // مسح قيمة المدخل لتمكين اختيار نفس الملف مرة أخرى
+        e.target.value = ''; 
+      }
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // ** تنسيق وعرض بيانات العميل للطباعة/PDF **
+  function updateClientDisplay() {
+      const clientName = document.getElementById('clientName').value.trim();
+      const clientAddress = document.getElementById('clientAddress').value.trim();
+      const clientPhone = document.getElementById('clientPhone').value.trim();
+      
+      const nameDisplay = document.getElementById('clientNameDisplay');
+      const addressDisplay = document.getElementById('clientAddressDisplay');
+      const phoneDisplay = document.getElementById('clientPhoneDisplay');
+
+      // 1. اسم العميل - (تم إضافة &#x200f; قبل النقطتين)
+      if (clientName) {
+          nameDisplay.innerHTML = `<strong>السيد &#x200f;:</strong> ${clientName}`; 
+          nameDisplay.style.display = 'block'; 
+      } else {
+          nameDisplay.innerHTML = '';
+          nameDisplay.style.display = 'none'; 
+      }
+
+      // 2. العنوان - (تم إضافة &#x200f; قبل النقطتين)
+      if (clientAddress) {
+          addressDisplay.innerHTML = `<strong>العنوان &#x200f;:</strong> ${clientAddress}`;
+          addressDisplay.style.display = 'block';
+      } else {
+          addressDisplay.innerHTML = '';
+          addressDisplay.style.display = 'none';
+      }
+
+      // 3. الهاتف - (تم إضافة &#x200f; قبل النقطتين)
+      if (clientPhone) {
+          phoneDisplay.innerHTML = `<strong>الهاتف &#x200f;:</strong> ${clientPhone}`;
+          phoneDisplay.style.display = 'block';
+      } else {
+          phoneDisplay.innerHTML = '';
+          phoneDisplay.style.display = 'none';
+      }
+      
+      saveClientData();
+  }
+
+  const clientInputs = document.querySelectorAll('#clientName, #clientAddress, #clientPhone');
+  clientInputs.forEach(input => {
+      input.addEventListener('change', () => {
+          saveClientData();
+      });
+  });
+
+  // ** تحديث التاريخ التلقائي **
+  function loadDate() {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    
+    document.getElementById('date').textContent = `${year}-${month}-${day}`;
+  }
+  
+  // ** تسلسل رقم العرض التلقائي **
+  function loadQuoteNumber() {
+    let lastNumber = parseInt(localStorage.getItem(LAST_QUOTE_KEY) || '0');
+    const newNumber = lastNumber; 
+    const year = new Date().getFullYear();
+    const paddedNumber = (newNumber + 1).toString().padStart(3, '0'); 
+    const quoteNumber = `Q-${year}-${paddedNumber}`;
+    
+    const storedQuoteNumber = localStorage.getItem('currentQuoteNumber') || quoteNumber;
+
+    document.getElementById('quoteNumberDisplay').textContent = storedQuoteNumber;
+  }
+  
+  // ⭐️ دالة زيادة تسلسل رقم العرض (تُستدعى بعد الطباعة/حفظ PDF)
+  function incrementQuoteNumber() {
+      // 1. قراءة رقم العرض الحالي من الشاشة
+      const currentQuoteNumberText = document.getElementById('quoteNumberDisplay').textContent.trim();
+      
+      // 2. محاولة استخلاص الجزء الرقمي
+      const numberMatch = currentQuoteNumberText.match(/(\d+)$/);
+      
+      if (numberMatch) {
+          const currentNumber = parseInt(numberMatch[1]);
+          
+          // 3. حفظ الرقم الحالي كرقم آخر تم استخدامه
+          localStorage.setItem(LAST_QUOTE_KEY, currentNumber);
+      }
+      
+      // 4. مسح رقم العرض الحالي المحفوظ في المتصفح لبدء عرض رقم جديد في المرة القادمة
+      localStorage.removeItem('currentQuoteNumber'); 
+
+      // إعادة تحميل الرقم المقترح الجديد (الذي سيزيد بواحد)
+      loadQuoteNumber(); 
+  }
+
+
+  // حفظ رقم العرض عند التعديل اليدوي (وظيفة غير مطلوبة لكنها تضمن حفظ التعديلات)
+  document.getElementById('quoteNumberDisplay').addEventListener('blur', function() {
+      localStorage.setItem('currentQuoteNumber', this.textContent);
+      
+      // إذا كان الرقم المعدل أكبر من آخر رقم آلي، نحدث الرقم الآلي
+      const currentNumberMatch = this.textContent.match(/(\d+)$/);
+      if (currentNumberMatch) {
+          const currentNumber = parseInt(currentNumberMatch[1]);
+          const lastNumber = parseInt(localStorage.getItem(LAST_QUOTE_KEY) || '0');
+          if (currentNumber > lastNumber) {
+              localStorage.setItem(LAST_QUOTE_KEY, currentNumber);
+          }
+      }
+  });
+
+
+  function updateNotesDisplay() {
+    const editor = document.getElementById('notesEditor');
+    const display = document.getElementById('notesContent');
+    display.innerText = editor.value; 
+    localStorage.setItem('quoteNotes', editor.value);
+  }
+  
+  function loadNotes() {
+    const savedNotes = localStorage.getItem('quoteNotes');
+    const defaultNotes = `* صلاحية العرض: 30 يوماً من تاريخ الإصدار
+* شروط الدفع: 50% مقدم و 50% عند التسليم
+* مدة التسليم: يتم الاتفاق عليها
+* الأسعار شاملة ضريبة القيمة المضافة`;
+    const notes = savedNotes || defaultNotes;
+    document.getElementById('notesEditor').value = notes;
+    document.getElementById('notesContent').innerText = notes;
+  }
+
+
+  // ** دوال العملاء (الإكمال التلقائي والحفظ) **
+  
+  function getClientList() {
+      const clients = localStorage.getItem('clients');
+      return clients ? JSON.parse(clients) : [];
+  }
+
+  function saveClientData() {
+      const name = document.getElementById('clientName').value.trim();
+      const address = document.getElementById('clientAddress').value.trim();
+      const phone = document.getElementById('clientPhone').value.trim();
+
+      if (name) {
+          let clients = getClientList();
+          // إزالة السجل القديم قبل إضافة الجديد (لتحديث البيانات)
+          clients = clients.filter(c => c.name !== name);
+          clients.push({ name, address, phone });
+          localStorage.setItem('clients', JSON.stringify(clients));
+      }
+  }
+
+  function showClientSuggestions(inputElement) {
+      const query = inputElement.value.toLowerCase();
+      const suggestionsDiv = document.getElementById('clientNameSuggestions');
+      suggestionsDiv.innerHTML = '';
+
+      if (!query) {
+          suggestionsDiv.style.display = 'none';
+          return;
+      }
+      
+      const clients = getClientList();
+      const filtered = clients.filter(c => c.name.toLowerCase().includes(query));
+
+      if (filtered.length > 0) {
+          filtered.forEach(client => {
+              const item = document.createElement('div');
+              item.classList.add('autocomplete-item');
+              item.innerText = client.name + (client.phone ? ` (${client.phone})` : '');
+              item.onmousedown = (e) => { e.preventDefault(); selectClient(client); }; 
+              suggestionsDiv.appendChild(item);
+          });
+          suggestionsDiv.style.display = 'block';
+      } else {
+          suggestionsDiv.style.display = 'none';
+      }
+  }
+  
+  function hideClientSuggestions(inputElement) {
+      setTimeout(() => {
+          document.getElementById('clientNameSuggestions').style.display = 'none';
+      }, 200);
+  }
+  
+  function selectClient(client) {
+      document.getElementById('clientName').value = client.name;
+      document.getElementById('clientAddress').value = client.address;
+      document.getElementById('clientPhone').value = client.phone;
+      updateClientDisplay();
+      document.getElementById('clientNameSuggestions').style.display = 'none';
+  }
+
+
+  // ** دوال إدارة العملاء (الجديدة) **
+  function showClientsManager() {
+    document.getElementById('clientSearch').value = ''; 
+    loadClientsTable();
+    document.getElementById('clientsManagerBox').style.display = 'block';
+  }
+
+  function hideClientsManager() {
+    document.getElementById('clientsManagerBox').style.display = 'none';
+  }
+
+  function loadClientsTable() {
+    const tbody = document.getElementById('clientsTableBody');
+    tbody.innerHTML = '';
+    
+    let clients = getClientList(); 
+
+    if (clients.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">لا توجد بيانات عملاء محفوظة حالياً.</td></tr>`;
+        return;
+    }
+
+    clients.forEach((c, index) => {
+        const row = tbody.insertRow();
+        row.dataset.originalName = c.name; 
+
+        row.insertCell().innerText = index + 1;
+        
+        const nameCell = row.insertCell();
+        nameCell.contentEditable = true;
+        nameCell.innerText = c.name;
+        nameCell.dataset.field = 'name';
+
+        const addressCell = row.insertCell();
+        addressCell.contentEditable = true;
+        addressCell.innerText = c.address || '';
+        addressCell.dataset.field = 'address';
+        
+        const phoneCell = row.insertCell();
+        phoneCell.contentEditable = true;
+        phoneCell.innerText = c.phone || '';
+        phoneCell.dataset.field = 'phone';
+
+        const controlCell = row.insertCell();
+        controlCell.innerHTML = `
+            <button onclick="saveClientEdit(this)" class="btn btn-add" style="padding: 5px 10px; font-size: 12px; margin-left: 5px;">حفظ</button>
+            <button onclick="deleteClient('${c.name.replace(/'/g, "\\'")}')" class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">حذف</button>
+        `;
+    });
+  }
+
+  function saveClientEdit(button) {
+      const row = button.closest('tr');
+      const originalName = row.dataset.originalName;
+      
+      const newName = row.querySelector('[data-field="name"]').innerText.trim();
+      const newAddress = row.querySelector('[data-field="address"]').innerText.trim();
+      const newPhone = row.querySelector('[data-field="phone"]').innerText.trim();
+
+      if (!newName) {
+          alert('خطأ: يرجى التأكد من إدخال اسم عميل صحيح.');
+          return;
+      }
+      
+      let clients = getClientList();
+      
+      clients = clients.filter(c => c.name !== originalName); 
+      
+      clients.push({ name: newName, address: newAddress, phone: newPhone });
+      
+      localStorage.setItem('clients', JSON.stringify(clients));
+      
+      alert('تم حفظ تعديلات العميل بنجاح!');
+      loadClientsTable(); 
+  }
+
+  function deleteClient(nameToDelete) {
+      if (confirm(`هل أنت متأكد من حذف العميل: ${nameToDelete}؟`)) {
+          let clients = getClientList();
+          clients = clients.filter(c => c.name !== nameToDelete);
+          localStorage.setItem('clients', JSON.stringify(clients));
+          loadClientsTable();
+          alert('تم حذف العميل بنجاح.');
+      }
+  }
+
+  function filterClientsTable() {
+      const input = document.getElementById('clientSearch').value.toLowerCase();
+      const rows = document.querySelectorAll('#clientsTableBody tr');
+
+      rows.forEach(row => {
+          const name = row.children[1].innerText.toLowerCase();
+          const phone = row.children[3].innerText.toLowerCase();
+          
+          if (name.includes(input) || phone.includes(input)) {
+              row.style.display = ''; 
+          } else {
+              row.style.display = 'none'; 
+          }
+      });
+  }
+
+  function exportClientsToExcel() {
+      const clients = getClientList();
+      if (clients.length === 0) {
+          alert('لا توجد بيانات عملاء لاستخراجها.');
+          return;
+      }
+
+      let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+      csvContent += "اسم العميل\tالعنوان\tرقم الجوال\n";
+
+      clients.forEach(c => {
+          const row = `${c.name}\t${c.address || ''}\t${c.phone || ''}`;
+          csvContent += row + "\n";
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "بيانات_العملاء.xls"); 
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  }
+  // ** نهاية دوال إدارة العملاء **
+
+
+  // ** دوال الأصناف والإستيراد **
+  
+  // دالة عرض مودال الاستيراد
+  function showImportModal() { 
+      document.getElementById('productsManagerBox').style.display = 'none'; 
+      document.getElementById('importModalBox').style.display = 'block'; 
+  }
+  // دالة إخفاء مودال الاستيراد
+  function hideImportModal() { 
+      document.getElementById('importModalBox').style.display = 'none'; 
+      showProductsManager(); 
+  }
+
+
+  function importData() {
+    const data = document.getElementById('excelData').value.trim();
+    if(!data) { alert('الرجاء لصق البيانات'); return; }
+    const lines = data.split('\n');
+    let importedCount = 0;
+    lines.forEach(line => {
+      const parts = line.split('\t');
+      if(parts.length >= 3) {
+        const name = parts[0].trim();
+        const desc = parts[1].trim();
+        const cost = parseFloat(parts[2].trim());
+        if(!isNaN(cost) && name) {
+          localStorage.setItem(`product_${name}`, JSON.stringify({name, desc, cost}));
+          importedCount++;
+        }
+      }
+    });
+    alert(`تم استيراد ${importedCount} صنف/تصناف. تم حفظها محلياً.`);
+    document.getElementById('excelData').value = ''; 
+    hideImportModal();
+    loadProductsTable(); 
+  }
+  
+  // ** إضافة صنف يدوي **
+  function showManualAddItem() {
+    document.getElementById('manualItemBox').style.display='block';
+    document.getElementById('manualName').value = '';
+    document.getElementById('manualDesc').value = '';
+    document.getElementById('manualCost').value = '';
+    document.getElementById('manualQty').value = '1';
+  }
+  
+  function hideManualAddItem() {
+    document.getElementById('manualItemBox').style.display='none';
+  }
+
+  function addNewItemManually() {
+    const name = document.getElementById('manualName').value.trim();
+    const desc = document.getElementById('manualDesc').value.trim();
+    const cost = parseFloat(document.getElementById('manualCost').value);
+    const qty = parseInt(document.getElementById('manualQty').value);
+
+    if (!name || isNaN(cost) || cost < 0) {
+      alert('يرجى إدخال اسم صنف وسعر تكلفة صحيحين.');
+      return;
+    }
+    if (isNaN(qty) || qty < 1) {
+      alert('الكمية يجب أن تكون رقماً صحيحاً وموجباً');
+      return;
+    }
+    
+    const newProduct = { name, desc, cost };
+    localStorage.setItem(`product_${name}`, JSON.stringify(newProduct));
+
+    addItemToQuote(newProduct, qty);
+    
+    hideManualAddItem();
+  }
+  
+  // دالة موحدة لإضافة البند سواء من البحث أو الإضافة اليدوية
+  function addItemToQuote(product, qty) {
+      const name = product.name;
+      const desc = product.desc;
+      const cost = product.cost;
+      const price = cost + (cost * PROFIT / 100);
+      const total = price * qty;
+      const tbody = document.getElementById('table');
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td style="padding:8px; text-align:center;">${tbody.children.length + 1}</td>
+        <td style="padding:8px;">${name}</td>
+        <td style="padding:8px;">${desc}</td>
+        <td style="padding:8px; text-align:center;"><input type="number" value="${qty}" min="1" onchange="updateRow(this)" style="width:60px; text-align:center;"></td>
+        <td 
+            style="padding:8px; text-align:right;" 
+            class="no-print cost-column"
+            data-cost="${cost.toFixed(2)}"
+            dir="ltr">${cost.toFixed(2)}
+        </td>
+        <td 
+            style="padding:8px; text-align:right;"
+            contenteditable="true" 
+            oninput="updateRowPrice(this)" 
+            dir="ltr">${price.toFixed(2)}
+        </td> <td style="padding:8px; text-align:right;">${total.toFixed(2)}</td>
+        <td style="padding:8px;" class="no-print delete-column"><button onclick="deleteRow(this)" class="btn btn-danger" style="padding:5px 10px; font-size:12px;">حذف</button></td>
+      `;
+      
+      row.dataset.cost = cost;
+      row.dataset.price = price; // ⭐️ حفظ السعر
+      row.dataset.qty = qty;
+      
+      tbody.appendChild(row);
+      calc();
+  }
+
+  function filterProducts() {
+    const input = document.getElementById('searchItem').value.toLowerCase();
+    const suggestionsDiv = document.getElementById('suggestions');
+    suggestionsDiv.innerHTML = '';
+    
+    for(let i=0; i<localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if(key.startsWith('product_')) {
+        const p = JSON.parse(localStorage.getItem(key));
+        if(p.name && !isNaN(p.cost) && (p.name.toLowerCase().includes(input) || (p.desc && p.desc.toLowerCase().includes(input)))) {
+          const div = document.createElement('div');
+          div.style.padding='5px'; div.style.cursor='pointer'; div.style.borderBottom='1px dashed #eee';
+          div.innerHTML = p.name + ' - ' + (p.desc || 'لا يوجد وصف');
+          div.onclick = () => { selectProduct(p); };
+          suggestionsDiv.appendChild(div);
+        }
+      }
+    }
+  }
+
+  function selectProduct(p) {
+    selectedProduct = p;
+    document.getElementById('searchItem').value = p.name;
+    document.getElementById('suggestions').innerHTML = '';
+  }
+
+  function addSelectedItem() {
+    if(!selectedProduct) { alert('يرجى اختيار صنف من القائمة'); return; }
+    const qty = parseInt(document.getElementById('itemQty').value);
+    if(isNaN(qty) || qty < 1) { alert('الكمية يجب أن تكون رقماً صحيحاً وموجباً'); return; }
+    
+    addItemToQuote(selectedProduct, qty);
+    hideAddItem();
+  }
+
+  function updateRow(input) {
+    const row = input.closest('tr');
+    let qty = parseInt(input.value);
+    if(isNaN(qty) || qty < 1) { qty=1; input.value=1; }
+    row.dataset.qty = qty;
+    const price = parseFloat(row.dataset.price); // استخدام السعر المحفوظ
+    const total = price * qty;
+    row.children[6].innerText = total.toFixed(2);
+    calc();
+  }
+
+  // ⭐️ الدالة الجديدة لحساب السعر والإجمالي عند التعديل المباشر على السعر
+  function updateRowPrice(element) {
+    const row = element.closest('tr');
+    const originalText = element.innerText.trim();
+    let newPrice = parseFloat(originalText);
+    
+    // إذا كان المدخل غير رقمي أو سالب، نرجع القيمة المحفوظة ونكتفي بالحساب
+    if (isNaN(newPrice) || newPrice < 0) {
+        // نضع القيمة المحفوظة في الخلية (لتصحيح الإدخال غير الصحيح)
+        element.innerText = parseFloat(row.dataset.price).toFixed(2);
+        calc(); 
+        return;
+    }
+    
+    row.dataset.price = newPrice; // حفظ السعر الجديد
+    
+    const qty = parseInt(row.dataset.qty);
+    const total = newPrice * qty;
+    
+    row.children[6].innerText = total.toFixed(2); // خلية الإجمالي
+    
+    // نحدد سعر التكلفة الجديد بشكل تقريبي بناءً على الربح الحالي (للحفاظ على منطق البيانات)
+    const newCost = newPrice / (1 + (PROFIT / 100));
+    row.dataset.cost = newCost; 
+    row.children[4].innerText = newCost.toFixed(2); // تحديث خلية التكلفة (للعرض فقط)
+    
+    calc();
+  }
+
+  function deleteRow(btn) {
+    btn.closest('tr').remove();
+    renumberRows();
+    calc();
+  }
+
+  function renumberRows() {
+    const rows = document.querySelectorAll('#table tr');
+    rows.forEach((row, index) => { row.children[0].innerText = index + 1; });
+  }
+  
+  // 🛠️ دالة calc المعدلة لدعم الخصم الشرطي ودمج منطق العرض
+  function calc() {
+    const rows = document.querySelectorAll('#table tr');
+    let subtotal = 0;
+    rows.forEach(r => { 
+        const totalCell = r.children[6]; 
+        subtotal += parseFloat(totalCell.innerText); 
+    });
+    document.getElementById('subtotal').innerText = subtotal.toFixed(2) + ' ر.س';
+
+    const discountInput = document.getElementById('discount');
+    const discountPercent = parseFloat(discountInput.value);
+
+    let discountVal = isNaN(discountPercent) || discountPercent < 0 ? 0 : discountPercent;
+    discountVal = Math.min(discountVal, 100);
+    discountInput.value = discountVal;
+
+    const discAmount = subtotal * discountVal / 100;
+    document.getElementById('discAmt').innerText = '- ' + discAmount.toFixed(2) + ' ر.س';
+    document.getElementById('discountDisplay').innerText = `${discountVal}%`;
+
+    const afterDisc = subtotal - discAmount;
+    document.getElementById('afterDisc').innerText = afterDisc.toFixed(2) + ' ر.س';
+
+    const vatAmount = afterDisc * VAT / 100;
+    document.getElementById('vat').innerText = vatAmount.toFixed(2) + ' ر.س';
+
+    const finalTotal = afterDisc + vatAmount;
+    document.getElementById('total').innerText = finalTotal.toFixed(2) + ' ر.س';
+    
+    // ** منطق إخفاء/إظهار صف الخصم بناءً على التعديل الجديد **
+    const discountRow = document.getElementById('discountRow');
+    const afterDiscRow = document.getElementById('afterDiscRow');
+
+    discountRow.style.display = 'flex';
+    afterDiscRow.style.display = 'flex';
+
+    if (window.matchMedia('print').matches && discountVal === 0) {
+        discountRow.style.display = 'none';
+        afterDiscRow.style.display = 'none';
+    }
+  }
+
+  function showAddItem() {
+    document.getElementById('addItemBox').style.display='block';
+    document.getElementById('searchItem').value='';
+    document.getElementById('suggestions').innerHTML='';
+    selectedProduct=null;
+  }
+  function hideAddItem() {
+    document.getElementById('addItemBox').style.display='none';
+  }
+  
+  // ** دوال إدارة الأصناف **
+  function showProductsManager() {
+    document.getElementById('productSearch').value = ''; 
+    loadProductsTable();
+    document.getElementById('productsManagerBox').style.display='block';
+  }
+
+  function hideProductsManager() {
+    document.getElementById('productsManagerBox').style.display='none';
+  }
+  
+  function loadProductsTable() {
+    const tbody = document.getElementById('productsTableBody');
+    tbody.innerHTML = '';
+    let products = [];
+    
+    for(let i=0; i<localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if(key.startsWith('product_')) {
+        const product = JSON.parse(localStorage.getItem(key));
+        product.originalName = product.name; 
+        products.push(product);
+      }
+    }
+    
+    if (products.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">لا توجد أصناف محفوظة حالياً.</td></tr>`;
+        return;
+    }
+
+    products.forEach((p, index) => {
+        const row = tbody.insertRow();
+        row.dataset.originalName = p.originalName;
+
+        row.insertCell().innerText = index + 1;
+        
+        const nameCell = row.insertCell();
+        nameCell.contentEditable = true;
+        nameCell.innerText = p.name;
+        nameCell.dataset.field = 'name';
+
+        const descCell = row.insertCell();
+        descCell.contentEditable = true;
+        descCell.innerText = p.desc || '';
+        descCell.dataset.field = 'desc';
+        
+        // ⭐️ جعل سعر التكلفة قابل للتعديل في إدارة الأصناف
+        const costCell = row.insertCell();
+        costCell.contentEditable = true;
+        costCell.innerText = (p.cost || 0).toFixed(2);
+        costCell.dataset.field = 'cost';
+        costCell.style.textAlign = 'right';
+
+        const controlCell = row.insertCell();
+        controlCell.innerHTML = `
+            <button onclick="saveProductEdit(this)" class="btn btn-add" style="padding: 5px 10px; font-size: 12px; margin-left: 5px;">حفظ</button>
+            <button onclick="deleteProduct('${p.originalName.replace(/'/g, "\\'")}')" class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">حذف</button>
+        `;
+    });
+    
+    filterProductsTable();
+  }
+  
+  function filterProductsTable() {
+    const input = document.getElementById('productSearch').value.toLowerCase();
+    const rows = document.querySelectorAll('#productsTableBody tr');
+
+    rows.forEach(row => {
+        const name = row.children[1].innerText.toLowerCase();
+        const desc = row.children[2].innerText.toLowerCase();
+        const cost = row.children[3].innerText.toLowerCase();
+        
+        if (name.includes(input) || desc.includes(input) || cost.includes(input)) {
+            row.style.display = ''; 
+        } else {
+            row.style.display = 'none'; 
+        }
+    });
+  }
+
+  function saveProductEdit(button) {
+      const row = button.closest('tr');
+      const originalName = row.dataset.originalName;
+      
+      const newName = row.querySelector('[data-field="name"]').innerText.trim();
+      const newDesc = row.querySelector('[data-field="desc"]').innerText.trim();
+      const newCostText = row.querySelector('[data-field="cost"]').innerText.trim();
+      const newCost = parseFloat(newCostText);
+      
+      if (!newName || isNaN(newCost) || newCost < 0) {
+          alert('خطأ: يرجى التأكد من إدخال اسم صنف وسعر تكلفة صحيحين.');
+          return;
+      }
+      
+      if (newName !== originalName) {
+          localStorage.removeItem(`product_${originalName}`);
+      }
+      
+      const updatedProduct = {
+          name: newName,
+          desc: newDesc,
+          cost: newCost
+      };
+      localStorage.setItem(`product_${newName}`, JSON.stringify(updatedProduct));
+      
+      alert('تم حفظ التعديلات بنجاح!');
+      loadProductsTable(); 
+  }
+
+  function deleteProduct(nameToDelete) {
+      if (confirm(`هل أنت متأكد من حذف الصنف: ${nameToDelete}؟`)) {
+          localStorage.removeItem(`product_${nameToDelete}`);
+          loadProductsTable();
+          alert('تم حذف الصنف بنجاح.');
+      }
+  }
+
+  function deleteAllProducts() {
+      if (confirm('هل أنت متأكد تماماً من حذف جميع الأصناف المحفوظة؟ هذا الإجراء لا يمكن التراجع عنه.')) {
+          let count = 0;
+          for(let i=localStorage.length - 1; i>=0; i--) {
+              const key = localStorage.key(i);
+              if(key.startsWith('product_')) {
+                  localStorage.removeItem(key);
+                  count++;
+              }
+          }
+          loadProductsTable();
+          alert(`تم حذف ${count} صنف/تصناف بنجاح.`);
+      }
+  }
+
+
+  // ** عرض نموذج إعدادات الشركة **
+  function showCompanyInfoForm() {
+    updateCompanyDisplay(); 
+    
+    document.getElementById('companyInfoForm').style.display='block';
+    document.getElementById('companyName').value = companyData.name;
+    document.getElementById('companySubTitle').value = companyData.subTitle; 
+    document.getElementById('companyAddress').value = companyData.address;
+    document.getElementById('companyPhone').value = companyData.phone;
+    document.getElementById('companyEmail').value = companyData.email;
+  }
+
+  function hideCompanyInfoForm() {
+    document.getElementById('companyInfoForm').style.display='none';
+  }
+
+  function saveCompanyInfo() {
+    companyData.name = document.getElementById('companyName').value;
+    companyData.subTitle = document.getElementById('companySubTitle').value; 
+    companyData.address = document.getElementById('companyAddress').value;
+    companyData.phone = document.getElementById('companyPhone').value;
+    companyData.email = document.getElementById('companyEmail').value;
+
+    localStorage.setItem('companyName', companyData.name);
+    localStorage.setItem('companySubTitle', companyData.subTitle); 
+    localStorage.setItem('companyAddress', companyData.address);
+    localStorage.setItem('companyPhone', companyData.phone);
+    localStorage.setItem('companyEmail', companyData.email);
+
+    updateCompanyDisplay();
+    hideCompanyInfoForm();
+  }
+  
+  // 🛠️ الأحداث الجديدة للتعامل مع الطباعة (للتأكد من إخفاء الصفوف عند الطباعة/PDF)
+  function hideDiscountRows() {
+      const discountVal = parseFloat(document.getElementById('discount').value) || 0;
+      if (discountVal === 0) {
+          document.getElementById('discountRow').style.display = 'none';
+          document.getElementById('afterDiscRow').style.display = 'none';
+      }
+  }
+
+  function showDiscountRows() {
+      document.getElementById('discountRow').style.display = 'flex';
+      document.getElementById('afterDiscRow').style.display = 'flex';
+  }
+  
+  window.addEventListener('beforeprint', hideDiscountRows);
+  window.addEventListener('afterprint', showDiscountRows);
+
+  // ⭐️ تعديل دالة الطباعة لتفعيل التسلسل
+  function printQuote() {
+    updateClientDisplay(); 
+    calc(); 
+    window.print();
+    // ⭐️ زيادة تسلسل رقم العرض
+    incrementQuoteNumber(); 
+  }
+
+  // 🛠️ دالة جديدة للتحكم في إخفاء/إظهار أعمدة التكلفة والحذف للـ PDF
+  function togglePDFColumns(show) {
+      const displayStyle = show ? '' : 'none'; 
+      const costColumns = document.querySelectorAll('.cost-column');
+      const deleteColumns = document.querySelectorAll('.delete-column');
+      const costCells = document.querySelectorAll('.cost-cell');
+      const deleteCells = document.querySelectorAll('.delete-cell');
+      
+      costColumns.forEach(el => { el.style.display = displayStyle; }); 
+      deleteColumns.forEach(el => { el.style.display = displayStyle; }); 
+      costCells.forEach(el => { el.style.display = displayStyle; }); 
+      deleteCells.forEach(el => { el.style.display = displayStyle; }); 
+      
+      // لتعديل عرض الأعمدة عند الإخفاء والإظهار
+      const nameHeader = document.querySelector('th:nth-child(2)'); 
+      const descHeader = document.querySelector('th:nth-child(3)');
+
+      if (!show) {
+          nameHeader.style.width = '35%';
+          descHeader.style.width = '45%';
+      } else {
+          nameHeader.style.width = '';
+          descHeader.style.width = '';
+      }
+  }
+
+  // ⭐️ تعديل دالة حفظ PDF لاستخدام اسم العميل وزيادة التسلسل
+  function savePDF() {
+    updateClientDisplay(); 
+    calc(); 
+
+    const element = document.getElementById('quoteContainer');
+    const notesEditor = document.getElementById('notesEditor');
+    const controls = document.querySelector('.controls'); 
+    
+    // ⭐️ توليد اسم الملف
+    const clientName = document.getElementById('clientName').value.trim();
+    const quoteNumber = document.getElementById('quoteNumberDisplay').textContent.trim();
+    
+    const safeClientName = clientName.replace(/[^a-z0-9\s-]/gi, '_').substring(0, 50) || 'عرض_سعر';
+    const filename = `${safeClientName} - ${quoteNumber}.pdf`;
+    // ⭐️ نهاية توليد اسم الملف
+
+    // 1. إخفاء العناصر غير المرغوب فيها قبل التحويل
+    notesEditor.style.display = 'none'; 
+    controls.style.display = 'none';
+    hideDiscountRows(); 
+    togglePDFColumns(false); 
+
+    const opt = {
+      margin: 0,
+      filename: filename, // ⭐️ استخدام الاسم الجديد
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(element).save().then(() => {
+        // 2. إعادة إظهار كل شيء بعد التحويل
+        notesEditor.style.display = 'block'; 
+        controls.style.display = 'flex';
+        showDiscountRows();
+        togglePDFColumns(true); 
+        
+        // ⭐️ زيادة تسلسل رقم العرض
+        incrementQuoteNumber(); 
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    updateCompanyDisplay();
+    loadDate(); 
+    loadQuoteNumber(); 
+    loadNotes();
+    loadDiscount(); 
+    updateClientDisplay(); 
+    calc(); 
+  });
+</script>
+</body>
+</html>
